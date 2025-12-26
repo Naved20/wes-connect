@@ -59,6 +59,9 @@ serve(async (req) => {
 
     const { userId } = await req.json();
 
+    console.log("Delete user request for userId:", userId);
+    console.log("Requested by admin:", requestingUser.id);
+
     if (!userId) {
       return new Response(
         JSON.stringify({ error: "Missing required field: userId" }),
@@ -71,6 +74,16 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ error: "Cannot delete your own account" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Check if target user exists in auth
+    const { data: targetUser, error: targetUserError } = await supabaseAdmin.auth.admin.getUserById(userId);
+    if (targetUserError || !targetUser) {
+      console.error("Target user not found:", targetUserError);
+      return new Response(
+        JSON.stringify({ error: "User not found" }),
+        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
