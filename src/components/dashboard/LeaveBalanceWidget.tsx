@@ -3,15 +3,74 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { CalendarPlus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from '@tanstack/react-query';
 
 const LeaveBalanceWidget = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
 
-  const leaveData = [
-    { type: 'Casual Leave', used: 4, total: 12, color: 'bg-primary' },
-    { type: 'Sick Leave', used: 2, total: 6, color: 'bg-chart-4' },
-    { type: 'Earned Leave', used: 5, total: 15, color: 'bg-chart-1' },
-  ];
+  // Get employee ID
+  const { data: employeeData } = useQuery({
+    queryKey: ['employee-self-leave-widget'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('employees')
+        .select('id')
+        .eq('user_id', user?.id)
+        .maybeSingle();
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user?.id,
+  });
+
+  // Fetch leave balance
+  const { data: leaveBalance } = useQuery({
+    queryKey: ['leave-balance-widget', employeeData?.id],
+    queryFn: async () => {
+      if (!employeeData?.id) return null;
+      
+      const currentMonth = new Date().getMonth() + 1;
+      const currentYear = new Date().getFullYear();
+      
+      const { data, error } = await supabase
+        .from('leave_balances')
+        .select('*')
+        .eq('employee_id', employeeData.id)
+        .eq('month', currentMonth)
+        .eq('year', currentYear)
+        .maybeSingle();
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!employeeData?.id,
+  });
+
+  // Fetch pending leave requests
+  const { data: pendingLeaves = [] } = useQuery({
+    queryKey: ['pending-leaves-widget', employeeData?.id],
+    queryFn: async () => {
+      if (!employeeData?.id) return [];
+      
+      const { data, error } = await supabase
+        .from('leaves')
+        .select('id')
+        .eq('employee_id', employeeData.id)
+        .eq('status', 'pending');
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!employeeData?.id,
+  });
+
+  const totalAllowed = leaveBalance?.total_allowed || 2;
+  const used = leaveBalance?.used || 0;
+  const remaining = totalAllowed - used;
 
   return (
     <Card className="h-full">
@@ -25,27 +84,26 @@ const LeaveBalanceWidget = () => {
         </div>
       </CardHeader>
       <CardContent className="space-y-6">
-        {leaveData.map((leave, index) => (
-          <div key={index} className="space-y-2">
-            <div className="flex items-center justify-between text-sm">
-              <span className="font-medium text-foreground">{leave.type}</span>
-              <span className="text-muted-foreground">
-                {leave.total - leave.used} / {leave.total} days left
-              </span>
-            </div>
-            <div className="relative">
-              <Progress
-                value={(leave.used / leave.total) * 100}
-                className="h-2"
-              />
-            </div>
+        <div className="space-y-2">
+          <div className="flex items-center justify-between text-sm">
+            <span className="font-medium text-foreground">Monthly Paid Leave</span>
+            <span className="text-muted-foreground">
+              {remaining} / {totalAllowed} days left
+            </span>
           </div>
-        ))}
+          <Progress
+            value={(used / totalAllowed) * 100}
+            className="h-2"
+          />
+          <p className="text-xs text-muted-foreground">
+            2 paid leaves allowed per month
+          </p>
+        </div>
 
         <div className="pt-4 border-t border-border">
           <div className="flex items-center justify-between">
             <span className="text-sm text-muted-foreground">Pending Requests</span>
-            <span className="text-lg font-bold text-chart-4">2</span>
+            <span className="text-lg font-bold text-chart-4">{pendingLeaves.length}</span>
           </div>
         </div>
       </CardContent>
