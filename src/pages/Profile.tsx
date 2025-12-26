@@ -64,9 +64,9 @@ const Profile = () => {
             <div className="flex flex-col md:flex-row items-center gap-6">
               <div className="relative">
                 <Avatar className="h-32 w-32">
-                  <AvatarImage src={user?.profilePicture} />
+                  <AvatarImage src={user?.avatarUrl} />
                   <AvatarFallback className="bg-primary text-primary-foreground text-4xl">
-                    {user?.name?.charAt(0) || 'U'}
+                    {user?.fullName?.charAt(0) || 'U'}
                   </AvatarFallback>
                 </Avatar>
                 {isEditing && (
@@ -76,7 +76,7 @@ const Profile = () => {
                 )}
               </div>
               <div className="text-center md:text-left flex-1">
-                <h2 className="text-2xl font-bold text-foreground">{user?.name}</h2>
+                <h2 className="text-2xl font-bold text-foreground">{user?.fullName}</h2>
                 <p className="text-muted-foreground">{profileData.designation}</p>
                 <div className="flex flex-wrap justify-center md:justify-start gap-2 mt-3">
                   <Badge variant="secondary">{profileData.employeeId}</Badge>
@@ -118,7 +118,7 @@ const Profile = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <Label>Full Name</Label>
-                    <Input value={user?.name || ''} disabled={!isEditing} />
+                    <Input value={user?.fullName || ''} disabled={!isEditing} />
                   </div>
                   <div className="space-y-2">
                     <Label>Email</Label>
