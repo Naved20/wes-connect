@@ -36,14 +36,14 @@ interface DashboardLayoutProps {
 }
 
 const DashboardLayout = ({ children }: DashboardLayoutProps) => {
-  const { user, logout } = useAuth();
+  const { user, signOut } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
+  const handleLogout = async () => {
+    await signOut();
+    navigate('/auth');
   };
 
   const menuItems = [
@@ -131,13 +131,13 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
               <DropdownMenuTrigger asChild>
                 <button className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-sidebar-accent transition-colors">
                   <Avatar className="h-10 w-10">
-                    <AvatarImage src={user?.profilePicture} />
+                    <AvatarImage src={user?.avatarUrl} />
                     <AvatarFallback className="bg-primary text-primary-foreground">
-                      {user?.name?.charAt(0) || 'U'}
+                      {user?.fullName?.charAt(0) || 'U'}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1 text-left">
-                    <p className="font-medium text-sm text-sidebar-foreground">{user?.name}</p>
+                    <p className="font-medium text-sm text-sidebar-foreground">{user?.fullName}</p>
                     <p className="text-xs text-muted-foreground capitalize">{user?.role}</p>
                   </div>
                   <ChevronDown className="h-4 w-4 text-muted-foreground" />
@@ -179,7 +179,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
         <header className="hidden lg:flex h-16 items-center justify-between px-6 border-b border-border bg-card">
           <div>
             <h2 className="text-lg font-semibold text-foreground">
-              Welcome back, {user?.name?.split(' ')[0]}!
+              Welcome back, {user?.fullName?.split(' ')[0]}!
             </h2>
             <p className="text-sm text-muted-foreground">
               {new Date().toLocaleDateString('en-US', {
@@ -199,16 +199,16 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
               <DropdownMenuTrigger asChild>
                 <button className="flex items-center gap-2 hover:bg-accent rounded-lg p-2 transition-colors">
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src={user?.profilePicture} />
+                    <AvatarImage src={user?.avatarUrl} />
                     <AvatarFallback className="bg-primary text-primary-foreground text-sm">
-                      {user?.name?.charAt(0) || 'U'}
+                      {user?.fullName?.charAt(0) || 'U'}
                     </AvatarFallback>
                   </Avatar>
                   <ChevronDown className="h-4 w-4 text-muted-foreground" />
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel>{user?.name}</DropdownMenuLabel>
+                <DropdownMenuLabel>{user?.fullName}</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => navigate('/profile')}>
                   <User className="mr-2 h-4 w-4" />

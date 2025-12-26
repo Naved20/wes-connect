@@ -1,78 +1,150 @@
-import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import { User, Session } from '@supabase/supabase-js';
+import { supabase } from '@/integrations/supabase/client';
 
 export type UserRole = 'admin' | 'manager' | 'employee';
 
-export interface User {
+export interface AppUser {
   id: string;
-  name: string;
   email: string;
+  fullName: string;
   role: UserRole;
-  profilePicture?: string;
+  avatarUrl?: string;
 }
 
 interface AuthContextType {
-  user: User | null;
+  user: AppUser | null;
+  session: Session | null;
   isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<boolean>;
-  logout: () => void;
+  isLoading: boolean;
+  signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
+  signUp: (email: string, password: string, fullName: string) => Promise<{ error: Error | null }>;
+  signOut: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Demo users for testing
-const demoUsers: Record<string, { password: string; user: User }> = {
-  'info@wazireducationsociety.com': {
-    password: 'WES@OneDesk786',
-    user: {
-      id: '1',
-      name: 'Admin User',
-      email: 'info@wazireducationsociety.com',
-      role: 'admin',
-    },
-  },
-  'manager@wes.com': {
-    password: 'manager123',
-    user: {
-      id: '2',
-      name: 'John Manager',
-      email: 'manager@wes.com',
-      role: 'manager',
-    },
-  },
-  'employee@wes.com': {
-    password: 'employee123',
-    user: {
-      id: '3',
-      name: 'Sarah Employee',
-      email: 'employee@wes.com',
-      role: 'employee',
-    },
-  },
-};
-
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<User | null>(() => {
-    const stored = localStorage.getItem('wes_user');
-    return stored ? JSON.parse(stored) : null;
-  });
+  const [user, setUser] = useState<AppUser | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const login = useCallback(async (email: string, password: string): Promise<boolean> => {
-    const demoUser = demoUsers[email.toLowerCase()];
-    if (demoUser && demoUser.password === password) {
-      setUser(demoUser.user);
-      localStorage.setItem('wes_user', JSON.stringify(demoUser.user));
-      return true;
+  const fetchUserProfile = async (userId: string): Promise<AppUser | null> => {
+    try {
+      // Fetch profile
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', userId)
+        .single();
+
+      if (profileError) {
+        console.error('Error fetching profile:', profileError);
+        return null;
+      }
+
+      // Fetch role
+      const { data: roleData, error: roleError } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId)
+        .single();
+
+      if (roleError) {
+        console.error('Error fetching role:', roleError);
+      }
+
+      return {
+        id: userId,
+        email: profile.email,
+        fullName: profile.full_name,
+        role: (roleData?.role as UserRole) || 'employee',
+        avatarUrl: profile.avatar_url || undefined,
+      };
+    } catch (error) {
+      console.error('Error in fetchUserProfile:', error);
+      return null;
     }
-    return false;
+  };
+
+  useEffect(() => {
+    // Set up auth state listener FIRST
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        setSession(session);
+        
+        if (session?.user) {
+          // Defer Supabase calls with setTimeout to prevent deadlock
+          setTimeout(async () => {
+            const appUser = await fetchUserProfile(session.user.id);
+            setUser(appUser);
+            setIsLoading(false);
+          }, 0);
+        } else {
+          setUser(null);
+          setIsLoading(false);
+        }
+      }
+    );
+
+    // THEN check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      if (session?.user) {
+        fetchUserProfile(session.user.id).then((appUser) => {
+          setUser(appUser);
+          setIsLoading(false);
+        });
+      } else {
+        setIsLoading(false);
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
-  const logout = useCallback(() => {
+  const signIn = useCallback(async (email: string, password: string) => {
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    return { error };
+  }, []);
+
+  const signUp = useCallback(async (email: string, password: string, fullName: string) => {
+    const redirectUrl = `${window.location.origin}/`;
+    
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: redirectUrl,
+        data: {
+          full_name: fullName,
+        },
+      },
+    });
+    return { error };
+  }, []);
+
+  const signOut = useCallback(async () => {
+    await supabase.auth.signOut();
     setUser(null);
-    localStorage.removeItem('wes_user');
+    setSession(null);
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated: !!user, login, logout }}>
+    <AuthContext.Provider 
+      value={{ 
+        user, 
+        session,
+        isAuthenticated: !!session, 
+        isLoading,
+        signIn, 
+        signUp,
+        signOut 
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
