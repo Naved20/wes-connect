@@ -16,6 +16,8 @@ export type Database = {
     Tables: {
       attendance: {
         Row: {
+          approved_at: string | null
+          approved_by: string | null
           check_in: string | null
           check_out: string | null
           created_at: string
@@ -25,8 +27,11 @@ export type Database = {
           notes: string | null
           status: string
           updated_at: string
+          work_hours: number | null
         }
         Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
           check_in?: string | null
           check_out?: string | null
           created_at?: string
@@ -36,8 +41,11 @@ export type Database = {
           notes?: string | null
           status?: string
           updated_at?: string
+          work_hours?: number | null
         }
         Update: {
+          approved_at?: string | null
+          approved_by?: string | null
           check_in?: string | null
           check_out?: string | null
           created_at?: string
@@ -47,6 +55,7 @@ export type Database = {
           notes?: string | null
           status?: string
           updated_at?: string
+          work_hours?: number | null
         }
         Relationships: [
           {
@@ -103,14 +112,87 @@ export type Database = {
         }
         Relationships: []
       }
+      holidays: {
+        Row: {
+          created_at: string
+          date: string
+          description: string | null
+          id: string
+          name: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          description?: string | null
+          id?: string
+          name: string
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          description?: string | null
+          id?: string
+          name?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      leave_balances: {
+        Row: {
+          created_at: string
+          employee_id: string
+          id: string
+          month: number
+          total_allowed: number
+          updated_at: string
+          used: number
+          year: number
+        }
+        Insert: {
+          created_at?: string
+          employee_id: string
+          id?: string
+          month: number
+          total_allowed?: number
+          updated_at?: string
+          used?: number
+          year: number
+        }
+        Update: {
+          created_at?: string
+          employee_id?: string
+          id?: string
+          month?: number
+          total_allowed?: number
+          updated_at?: string
+          used?: number
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leave_balances_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       leaves: {
         Row: {
           approved_at: string | null
           approved_by: string | null
           created_at: string
+          days_count: number | null
           employee_id: string
           end_date: string
           id: string
+          is_paid: boolean | null
           leave_type: string
           reason: string | null
           start_date: string
@@ -121,9 +203,11 @@ export type Database = {
           approved_at?: string | null
           approved_by?: string | null
           created_at?: string
+          days_count?: number | null
           employee_id: string
           end_date: string
           id?: string
+          is_paid?: boolean | null
           leave_type: string
           reason?: string | null
           start_date: string
@@ -134,9 +218,11 @@ export type Database = {
           approved_at?: string | null
           approved_by?: string | null
           created_at?: string
+          days_count?: number | null
           employee_id?: string
           end_date?: string
           id?: string
+          is_paid?: boolean | null
           leave_type?: string
           reason?: string | null
           start_date?: string
@@ -197,45 +283,63 @@ export type Database = {
       }
       salary: {
         Row: {
+          absent_days: number | null
           allowances: number | null
           basic_salary: number
           created_at: string
           deductions: number | null
           employee_id: string
           id: string
+          is_locked: boolean | null
+          leave_days: number | null
           month: number
           net_salary: number
           paid_at: string | null
+          per_day_salary: number | null
+          present_days: number | null
           status: string
           updated_at: string
+          working_days: number | null
           year: number
         }
         Insert: {
+          absent_days?: number | null
           allowances?: number | null
           basic_salary: number
           created_at?: string
           deductions?: number | null
           employee_id: string
           id?: string
+          is_locked?: boolean | null
+          leave_days?: number | null
           month: number
           net_salary: number
           paid_at?: string | null
+          per_day_salary?: number | null
+          present_days?: number | null
           status?: string
           updated_at?: string
+          working_days?: number | null
           year: number
         }
         Update: {
+          absent_days?: number | null
           allowances?: number | null
           basic_salary?: number
           created_at?: string
           deductions?: number | null
           employee_id?: string
           id?: string
+          is_locked?: boolean | null
+          leave_days?: number | null
           month?: number
           net_salary?: number
           paid_at?: string | null
+          per_day_salary?: number | null
+          present_days?: number | null
           status?: string
           updated_at?: string
+          working_days?: number | null
           year?: number
         }
         Relationships: [

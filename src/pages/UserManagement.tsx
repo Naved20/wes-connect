@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Search, UserPlus, Mail, MoreHorizontal, Shield, Users, Eye, EyeOff, Lock } from 'lucide-react';
+import { Search, UserPlus, Mail, MoreHorizontal, Shield, Users, Eye, EyeOff, Lock, Trash2 } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -159,6 +159,39 @@ const UserManagement = () => {
     onError: (error: Error) => {
       toast({
         title: 'Failed to update role',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
+  // Delete user mutation
+  const deleteUserMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      const response = await supabase.functions.invoke('delete-user', {
+        body: { userId },
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message || 'Failed to delete user');
+      }
+
+      if (response.data?.error) {
+        throw new Error(response.data.error);
+      }
+
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users-with-roles'] });
+      toast({
+        title: 'User deleted',
+        description: 'User has been deleted successfully.',
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Failed to delete user',
         description: error.message,
         variant: 'destructive',
       });
@@ -470,6 +503,17 @@ const UserManagement = () => {
                                 onClick={() => handleRoleChange(u.user_id, u.role, u.role === 'employee' ? 'manager' : 'employee')}
                               >
                                 Change to {u.role === 'employee' ? 'Manager' : 'Employee'}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem 
+                                className="text-destructive"
+                                onClick={() => {
+                                  if (confirm(`Are you sure you want to delete ${u.full_name}? This action cannot be undone.`)) {
+                                    deleteUserMutation.mutate(u.user_id);
+                                  }
+                                }}
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Delete User
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
