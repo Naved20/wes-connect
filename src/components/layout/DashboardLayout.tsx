@@ -27,6 +27,7 @@ import {
   User,
   CalendarDays,
   ClipboardList,
+  UserCog,
 } from 'lucide-react';
 import wesLogo from '@/assets/wes-logo.jpg';
 import { cn } from '@/lib/utils';
@@ -53,6 +54,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
     { icon: Wallet, label: 'Salary', path: '/salary', roles: ['admin', 'manager', 'employee'] },
     { icon: ClipboardList, label: 'Tasks', path: '/tasks', roles: ['admin', 'manager', 'employee'] },
     { icon: Users, label: 'Employees', path: '/employees', roles: ['admin', 'manager'] },
+    { icon: UserCog, label: 'User Management', path: '/users', roles: ['admin'] },
     { icon: Calendar, label: 'Holidays', path: '/holidays', roles: ['admin'] },
     { icon: FileText, label: 'Reports', path: '/reports', roles: ['admin', 'manager'] },
     { icon: Settings, label: 'Settings', path: '/settings', roles: ['admin'] },

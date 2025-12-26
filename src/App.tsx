@@ -12,6 +12,7 @@ import Salary from "./pages/Salary";
 import Profile from "./pages/Profile";
 import Employees from "./pages/Employees";
 import Tasks from "./pages/Tasks";
+import UserManagement from "./pages/UserManagement";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -119,6 +120,14 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <Tasks />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/users"
+        element={
+          <ProtectedRoute>
+            <UserManagement />
           </ProtectedRoute>
         }
       />
